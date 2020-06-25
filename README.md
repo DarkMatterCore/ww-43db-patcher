@@ -5,6 +5,6 @@ This is a Wii homebrew application that patches the WiiWare aspect ratio databas
 
 A backup of the unpatched System Menu U8 archive content file is created at `sd:/ww-43db-patcher_bkp/<content_id>.app`. It is recommended to copy it to a safer location.
 
-For obvious reasons, this only works under Wii U consoles. Big thanks to [InvoxiPlayGames](https://github.com/InvoxiPlayGames) for testing.
+For obvious reasons, this only works under Wii U consoles. Big thanks to [InvoxiPlayGames](https://github.com/InvoxiPlayGames) for both testing and providing the icon!
 
 ww-43db-patcher is licensed under GPLv2.
