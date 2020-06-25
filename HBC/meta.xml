@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<app version="1.1">
+	<name>ww-43db-patcher</name>
+	<version>0.1</version>
+        <release_date>20200625000000</release_date>
+	<coder>DarkMatterCore</coder>
+	<short_description>vWii WiiWare 43DB patcher.</short_description>
+	<long_description>Patches WiiWare aspect ratio database (43DB) from the vWii System Menu U8 archive to stub all of its entries, effectively enabling access to 16:9 aspect ratio in WiiWare titles where 4:3 is otherwise enforced.</long_description>
+	<ahb_access/>
+</app>
