@@ -128,9 +128,12 @@ bool u8ContextInit(void *buf, U8Context *ctx)
         
         /* Check data offset. */
         /* Files: check if the data offset matches the current value for the calculated file offset. */
-        /* Directories: check if the data offset is equal to or greater than the node count, or if the node it points to isn't a directory node. */
+        /* Directories: check if the data offset is equal to or greater than the node count. */
+        
+        /* Note: don't check if the node pointed to by the index from the data offset in a directory node actually *is* a directory node. */
+        /* Some custom tools don't set proper data offset values for directory nodes. */
         if ((nodes[i].properties.type == U8NodeType_File && nodes[i].data_offset < u8_header.data_offset) || \
-            (nodes[i].properties.type == U8NodeType_Directory && (nodes[i].data_offset >= node_count || nodes[nodes[i].data_offset].properties.type != U8NodeType_Directory)))
+            (nodes[i].properties.type == U8NodeType_Directory && nodes[i].data_offset >= node_count))
         {
             ERROR_MSG("Invalid data offset for U8 node #%u! (0x%x).", node_number, nodes[i].data_offset);
             goto out;
