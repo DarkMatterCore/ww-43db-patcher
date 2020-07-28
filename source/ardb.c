@@ -100,7 +100,7 @@ bool ardbPatchDatabaseFromSystemMenuArchive(u8 type)
     }
     
 #ifdef BACKUP_U8_ARCHIVE
-    strcat(backup_path, strrchr(content_path, '/') + 1);
+    strcat(backup_path, strrchr(content_path, '/'));
     
     backup_fd = fopen(backup_path, "wb");
     if (!backup_fd)
