@@ -20,6 +20,7 @@
 
 #include "utils.h"
 #include "ardb.h"
+#include "43db.h"
 
 #include <runtimeiospatch.h>
 
@@ -95,7 +96,7 @@ int main(int argc, char **argv)
     /* Patch WiiWare aspect ratio database. */
     printf("Patching WiiWare aspect ratio database...\n\n");
     
-    if (!ardbPatchDatabaseFromSystemMenuArchive(AspectRatioDatabaseType_WiiWare))
+    if (!ardbPatchDatabaseFromSystemMenuArchive(AspectRatioDatabaseType_WiiWare, g_wwdb_contents))
     {
         ret = -5;
         goto out;

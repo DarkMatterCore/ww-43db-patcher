@@ -40,6 +40,6 @@ typedef enum {
 } AspectRatioDatabaseType;
 
 /// Patches an aspect ratio database stored inside the System Menu's U8 archive.
-bool ardbPatchDatabaseFromSystemMenuArchive(u8 type);
+bool ardbPatchDatabaseFromSystemMenuArchive(u8 type, const u32 * modifiedAspectRatioDatabase);
 
 #endif /* __ARDB_H__ */

@@ -30,7 +30,7 @@ static const char *g_ardbArchivePaths[] = {
 
 static const u8 g_ardbArchivePathsCount = (u8)MAX_ELEMENTS(g_ardbArchivePaths);
 
-bool ardbPatchDatabaseFromSystemMenuArchive(u8 type)
+bool ardbPatchDatabaseFromSystemMenuArchive(u8 type, const u32 * modifiedAspectRatioDatabase)
 {
     if (type > g_ardbArchivePathsCount)
     {
@@ -171,7 +171,7 @@ bool ardbPatchDatabaseFromSystemMenuArchive(u8 type)
 #endif
     
     /* Patch aspect ratio database. */
-    for(u32 i = 0; i < ardb->entry_count; i++) ardb->entries[i] = 0x5A5A5A00; /* "ZZZ.". */
+    for(u32 i = 0; i < ardb->entry_count; i++) ardb->entries[i] = modifiedAspectRatioDatabase[i]; /* "ZZZ.". */
     
     /* Save modified aspect ratio database data to U8 archive buffer. */
     if (!u8SaveFileData(&u8_ctx, u8_node, ardb_data, ardb_data_size))
