@@ -77,11 +77,36 @@ int main(int argc, char **argv)
         ret = -3;
         goto out;
     }
-    
+    printf("\nPress + to patch 43DB, press - to revert it to normal or press home to abort");
+    bool toPatch;
+    while (true)
+    {
+        WPAD_ScanPads();
+
+        u32 pressed = WPAD_ButtonsDown(0);
+
+        if (pressed & WPAD_BUTTON_PLUS)
+        {
+            toPatch = true;
+            break;
+        }
+        if (pressed & WPAD_BUTTON_MINUS)
+        {
+            toPatch = false;
+            break;
+        }
+        if (pressed & WPAD_BUTTON_HOME)
+        {
+            goto out;
+        }
+
+        VIDEO_WaitVSync();
+    }
+
     printf("OK!\n");
     
     /* Initialize NAND filesystem driver. */
-    printf("Initializing NAND FS driver... ");
+    printf("Initializing NAND FS driver... \n");
     
     ret = ISFS_Initialize();
     if (ret < 0)
@@ -93,15 +118,25 @@ int main(int argc, char **argv)
     
     printf("OK!\n\n");
     
-    /* Patch WiiWare aspect ratio database. */
-    printf("Patching WiiWare aspect ratio database...\n\n");
-    
-    if (!ardbPatchDatabaseFromSystemMenuArchive(AspectRatioDatabaseType_WiiWare, g_wwdb_contents))
+    /* Patch (or unpatch) WiiWare aspect ratio database. */
+    if (toPatch)
     {
-        ret = -5;
-        goto out;
+        printf("Patching WiiWare aspect ratio database...\n\n");
+        if (!ardbPatchDatabaseFromSystemMenuArchive(AspectRatioDatabaseType_WiiWare, g_wwdb_patched_contents))
+        {
+            ret = -5;
+            goto out;
+        }
     }
-    
+    else
+    {
+        printf("Unpatching WiiWare aspect ratio database...\n\n");
+        if (!ardbPatchDatabaseFromSystemMenuArchive(AspectRatioDatabaseType_WiiWare, g_wwdb_contents))
+        {
+            ret = -5;
+            goto out;
+        }
+    }
     printf("Process completed. Press any button to exit.");
     
 out:
