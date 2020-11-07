@@ -36,7 +36,7 @@
 #include <wiiuse/wpad.h>
 
 #define APP_NAME                        "ww-43db-patcher"
-#define VERSION                         "0.1"
+#define VERSION                         "0.2"
 
 /* These control the behaviour of aspect ratio database patching. */
 #define BACKUP_U8_ARCHIVE
