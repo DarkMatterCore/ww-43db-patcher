@@ -91,11 +91,72 @@ int main(int argc, char **argv)
     }
     
     printf("OK!\n\n");
-    
+
+    printf("\nPress + to patch 43DB, press - to restore the backup, or press home to abort");
+    bool restoreBackup;
+    while (true)
+    {
+        WPAD_ScanPads();
+
+        u32 pressed = WPAD_ButtonsDown(0);
+
+        if (pressed & WPAD_BUTTON_PLUS)
+        {
+            restoreBackup = false;
+            break;
+        }
+        if (pressed & WPAD_BUTTON_MINUS)
+        {
+            restoreBackup = true;
+            break;
+        }
+        if (pressed & WPAD_BUTTON_HOME)
+        {
+            printf("process aborted\n");
+            ret = -5;
+            goto out;
+        }
+
+        VIDEO_WaitVSync();
+    }
+
     /* Patch WiiWare aspect ratio database. */
     printf("Patching WiiWare aspect ratio database...\n\n");
     
-    if (!ardbPatchDatabaseFromSystemMenuArchive(AspectRatioDatabaseType_WiiWare))
+    if (restoreBackup)
+    {
+        bool sd_mounted = utilsMountSdCard();
+        if(!sd_mounted)
+        {
+            printf("unable to mount SD card\n");
+            ret = -5;
+            goto out;
+        }
+        if (access("sd:/" APP_NAME "_bkp", F_OK))
+        {
+            int fileSize = utilsGetFileSize("sd:/" APP_NAME "_bkp");
+            if (fileSize == 536)
+            {
+                u32 *backup = utilsReadFile("sd:/" APP_NAME "_bkp", fileSize);
+                if (!ardbPatchDatabaseFromSystemMenuArchive(AspectRatioDatabaseType_WiiWare, backup))
+                {
+                    ret = -5;
+                    free(backup);
+                    goto out;
+                }
+                free(backup);
+            } else {
+                printf("43DB backup is not the correct size\n");
+                ret = -5;
+                goto out;
+            }
+        } else {
+            printf("No backup to restore exists\n");
+            ret = -5;
+            goto out;
+        }
+    }
+    else if (!ardbPatchDatabaseFromSystemMenuArchive(AspectRatioDatabaseType_WiiWare, NULL))
     {
         ret = -5;
         goto out;
