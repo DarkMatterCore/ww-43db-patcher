@@ -106,9 +106,9 @@ ALWAYS_INLINE tmd *utilsGetTMDFromSignedBlob(signed_blob *stmd)
 void *utilsReadFileFromFlashFileSystem(const char *path, u32 *out_size);
 bool utilsWriteDataToFlashFileSystemFile(const char *path, void *buf, u32 size);
 
-#ifdef BACKUP_U8_ARCHIVE
 bool utilsMountSdCard(void);
 void utilsUnmountSdCard(void);
-#endif
+int utilsGetFileSize(const char *filename);
+u32 *utilsReadFile(const char *filename, int filesize);
 
 #endif /* __UTILS_H__ */
