@@ -92,7 +92,7 @@ int main(int argc, char **argv)
     
     printf("OK!\n\n");
 
-    printf("\nPress + to patch 43DB, press - to restore the backup, or press home to abort");
+    printf("Press + to patch 43DB, press - to restore the backup, or press home to abort\n");
     bool restoreBackup;
     while (true)
     {
