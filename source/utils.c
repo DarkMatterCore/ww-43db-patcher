@@ -20,6 +20,7 @@
 
 #include <fat.h>
 #include <sdcard/wiisd_io.h>
+#include <sys/stat.h>
 
 #include "utils.h"
 
@@ -37,9 +38,7 @@ static s32 g_isfsFd ATTRIBUTE_ALIGN(32) = 0;
 static char g_isfsFilePath[ISFS_MAXPATH] ATTRIBUTE_ALIGN(32) = {0};
 static fstats g_isfsFileStats ATTRIBUTE_ALIGN(32) = {0};
 
-#ifdef BACKUP_U8_ARCHIVE
 static bool g_sdCardMounted = false;
-#endif
 
 /* Function prototypes. */
 
@@ -359,7 +358,6 @@ out:
     return success;
 }
 
-#ifdef BACKUP_U8_ARCHIVE
 bool utilsMountSdCard(void)
 {
     if (g_sdCardMounted) return true;
@@ -374,7 +372,22 @@ void utilsUnmountSdCard(void)
     __io_wiisd.shutdown();
     g_sdCardMounted = false;
 }
-#endif
+
+int utilsGetFileSize(const char *filename)
+{
+    struct stat st;
+    stat(filename, &st);
+    return st.st_size;
+}
+
+u32 *utilsReadFile(const char *filename, int filesize)
+{
+    u32 *backup = (u32 *) malloc(filesize);
+    FILE *file = fopen(filename, "rb");
+    fread(backup, filesize, 1, file);
+    fclose(file);
+    return backup;
+}
 
 static u32 utilsButtonsDownAll(void)
 {
