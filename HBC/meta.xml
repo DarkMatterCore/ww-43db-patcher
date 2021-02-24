@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <app version="1.1">
 	<name>ww-43db-patcher</name>
-	<version>0.1</version>
+	<version>0.2</version>
         <release_date>20200625000000</release_date>
 	<coder>DarkMatterCore</coder>
 	<short_description>vWii WiiWare 43DB patcher.</short_description>

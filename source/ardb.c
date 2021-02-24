@@ -179,7 +179,7 @@ skip2:
     {
         for(u32 i = 0; i < ardb->entry_count; i++) ardb->entries[i] = 0x5A5A5A00; /* "ZZZ.". */
     } else {
-        for(u32 i = 0; i < ardb->entry_count; i++) ardb->entries[i] = backupData[i]; /* "ZZZ.". */
+        for(u32 i = 0; i < ardb->entry_count; i++) ardb->entries[i] = backupData[i]; /* patch from array. */
     }
     
     /* Save modified aspect ratio database data to U8 archive buffer. */
