@@ -30,7 +30,7 @@ static const char *g_ardbArchivePaths[] = {
 
 static const u8 g_ardbArchivePathsCount = (u8)MAX_ELEMENTS(g_ardbArchivePaths);
 
-bool ardbPatchDatabaseFromSystemMenuArchive(u8 type)
+bool ardbPatchDatabaseFromSystemMenuArchive(u8 type, const u32 *backupData)
 {
     if (type > g_ardbArchivePathsCount)
     {
@@ -58,6 +58,7 @@ bool ardbPatchDatabaseFromSystemMenuArchive(u8 type)
     bool success = false;
     
 #ifdef BACKUP_U8_ARCHIVE
+    if (!backupData) goto skip;
     FILE *backup_fd = NULL;
     char backup_path[ISFS_MAXPATH] = {0};
     bool backup_created = false;
@@ -71,6 +72,7 @@ bool ardbPatchDatabaseFromSystemMenuArchive(u8 type)
     
     sprintf(backup_path, "sd:/" APP_NAME "_bkp");
     mkdir(backup_path, 0777);
+skip:
 #endif
     
     /* Get System Menu TMD. */
@@ -100,6 +102,7 @@ bool ardbPatchDatabaseFromSystemMenuArchive(u8 type)
     }
     
 #ifdef BACKUP_U8_ARCHIVE
+    if (!backupData) goto skip2;
     strcat(backup_path, strrchr(content_path, '/'));
     
     backup_fd = fopen(backup_path, "wb");
@@ -124,6 +127,7 @@ bool ardbPatchDatabaseFromSystemMenuArchive(u8 type)
     backup_created = true;
     
     printf("Saved System Menu U8 archive backup to \"%s\".\nPlease copy it to a safe location.\n\n", backup_path);
+skip2:
 #endif
     
     /* Initialize U8 context. */
@@ -171,7 +175,12 @@ bool ardbPatchDatabaseFromSystemMenuArchive(u8 type)
 #endif
     
     /* Patch aspect ratio database. */
-    for(u32 i = 0; i < ardb->entry_count; i++) ardb->entries[i] = 0x5A5A5A00; /* "ZZZ.". */
+    if (!backupData)
+    {
+        for(u32 i = 0; i < ardb->entry_count; i++) ardb->entries[i] = 0x5A5A5A00; /* "ZZZ.". */
+    } else {
+        for(u32 i = 0; i < ardb->entry_count; i++) ardb->entries[i] = backupData[i]; /* "ZZZ.". */
+    }
     
     /* Save modified aspect ratio database data to U8 archive buffer. */
     if (!u8SaveFileData(&u8_ctx, u8_node, ardb_data, ardb_data_size))
