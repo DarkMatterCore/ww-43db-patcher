@@ -120,7 +120,7 @@ bool u8ContextInit(void *buf, U8Context *ctx)
         }
         
         /* Check name. */
-        if (!strlen(str_table + nodes[i].properties.name_offset))
+        if (!*(str_table + nodes[i].properties.name_offset))
         {
             ERROR_MSG("Empty name for U8 node #%u!", node_number);
             goto out;

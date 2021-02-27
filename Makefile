@@ -15,6 +15,13 @@ include $(DEVKITPPC)/wii_rules
 # SOURCES is a list of directories containing source code
 # INCLUDES is a list of directories containing extra header files
 #---------------------------------------------------------------------------------
+
+VERSION_MAJOR := 0
+VERSION_MINOR := 2
+
+APP_NAME	:=	ww-43db-patcher
+APP_VERSION	:=  ${VERSION_MAJOR}.${VERSION_MINOR}
+
 TARGET		:=	boot
 BUILD		:=	build
 SOURCES		:=	source
@@ -25,10 +32,12 @@ INCLUDES	:=
 # options for code generation
 #---------------------------------------------------------------------------------
 
-CFLAGS	= -g -O2 -Wall -Wextra $(MACHDEP) $(INCLUDE)
+CFLAGS	=	-g -O2 -Wall -Wextra $(MACHDEP) $(INCLUDE)
+CFLAGS	+=	-DVERSION_MAJOR=${VERSION_MAJOR} -DVERSION_MINOR=${VERSION_MINOR} -DAPP_NAME=\"${APP_NAME}\" -DAPP_VERSION=\"${APP_VERSION}\"
+
 CXXFLAGS	=	$(CFLAGS)
 
-LDFLAGS =	-g $(MACHDEP) -Wl,-Map,$(notdir $@).map
+LDFLAGS	=	-g $(MACHDEP) -Wl,-Map,$(notdir $@).map
 
 #---------------------------------------------------------------------------------
 # any extra libraries we wish to link with the project

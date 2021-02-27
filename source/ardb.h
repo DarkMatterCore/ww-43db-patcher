@@ -26,7 +26,7 @@
 #define ARDB_MAGIC    (u32)0x34334442 /* "43DB". */
 
 typedef struct {
-    u32 magic;          ///< ARDB_MAGIC;
+    u32 magic;          ///< ARDB_MAGIC.
     u32 version;        ///< Database version number.
     u32 entry_count;    ///< Entry count.
     u32 reserved;       ///< Reserved.
@@ -41,5 +41,10 @@ typedef enum {
 
 /// Patches an aspect ratio database stored inside the System Menu's U8 archive.
 bool ardbPatchDatabaseFromSystemMenuArchive(u8 type);
+
+#ifdef BACKUP_U8_ARCHIVE
+/// Restores a previously created System Menu U8 archive from the inserted SD card.
+bool ardbRestoreSystemMenuArchive(void);
+#endif  /* BACKUP_U8_ARCHIVE */
 
 #endif /* __ARDB_H__ */

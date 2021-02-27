@@ -31,7 +31,7 @@ int main(int argc, char **argv)
     (void)argv;
     
     int ret = 0;
-    bool vwii = utilsIsWiiU();
+    bool vwii = utilsIsWiiU(), bail = false;
     
     /* Set reload time to 10 seconds in case an exception is triggered. */
     __exception_setreload(10);
@@ -90,25 +90,82 @@ int main(int argc, char **argv)
         goto out;
     }
     
-    printf("OK!\n\n");
+    printf("OK!\n");
     
-    /* Patch WiiWare aspect ratio database. */
-    printf("Patching WiiWare aspect ratio database...\n\n");
+#ifdef BACKUP_U8_ARCHIVE
+    /* Mount SD card. */
+    printf("Mounting SD card... ");
     
-    if (!ardbPatchDatabaseFromSystemMenuArchive(AspectRatioDatabaseType_WiiWare))
+    if (!utilsMountSdCard())
     {
+        printf("FAILED!");
         ret = -5;
         goto out;
     }
     
-    printf("Process completed. Press any button to exit.");
+    printf("OK!\n\n");
+#endif  /* BACKUP_U8_ARCHIVE */
+    
+    printf("Press + to patch the WiiWare aspect ratio database (43DB).\n");
+#ifdef BACKUP_U8_ARCHIVE
+    printf("Press - to restore a previously created backup of the System Menu U8 archive.\n");
+#endif  /* BACKUP_U8_ARCHIVE */
+    printf("Press HOME to exit.\n\n");
+    
+    fflush(stdout);
+    
+    while(true)
+    {
+        u32 pressed = utilsGetInput(UtilsInputType_Down);
+        
+        if (pressed == WPAD_BUTTON_PLUS)
+        {
+            /* Patch WiiWare aspect ratio database. */
+            printf("Patching WiiWare aspect ratio database...\n\n");
+            
+            if (!ardbPatchDatabaseFromSystemMenuArchive(AspectRatioDatabaseType_WiiWare))
+            {
+                ret = -6;
+                goto out;
+            }
+            
+            break;
+        } else
+#ifdef BACKUP_U8_ARCHIVE
+        if (pressed == WPAD_BUTTON_MINUS)
+        {
+            /* Restore System Menu U8 archive backup. */
+            printf("Restoring System Menu U8 archive...\n\n");
+            
+            if (!ardbRestoreSystemMenuArchive())
+            {
+                ret = -7;
+                goto out;
+            }
+            
+            break;
+        } else
+#endif  /* BACKUP_U8_ARCHIVE */
+        if (pressed == WPAD_BUTTON_HOME)
+        {
+            /* Exit. */
+            bail = true;
+            break;
+        }
+    }
+    
+    if (!bail) printf("Process completed. Press any button to exit.");
     
 out:
+#ifdef BACKUP_U8_ARCHIVE
+    utilsUnmountSdCard();
+#endif  /* BACKUP_U8_ARCHIVE */
+    
     ISFS_Deinitialize();
     
     if (ret != 0) printf("\n\nProcess cannot continue. Press any button to exit.");
     
-    utilsWaitForButtonPress();
+    if (!bail) utilsWaitForButtonPress();
     
     utilsReboot();
     

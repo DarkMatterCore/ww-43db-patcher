@@ -35,10 +35,7 @@
 #include <ogc/machine/processor.h>
 #include <wiiuse/wpad.h>
 
-#define APP_NAME                        "ww-43db-patcher"
-#define VERSION                         "0.1"
-
-/* These control the behaviour of aspect ratio database patching. */
+/* These macros control the behaviour of aspect ratio database patching. */
 #define BACKUP_U8_ARCHIVE
 //#define DISPLAY_ARDB_ENTRIES
 
@@ -103,12 +100,16 @@ ALWAYS_INLINE tmd *utilsGetTMDFromSignedBlob(signed_blob *stmd)
     return (tmd*)((u8*)stmd + SIGNATURE_SIZE(stmd));
 }
 
-void *utilsReadFileFromFlashFileSystem(const char *path, u32 *out_size);
-bool utilsWriteDataToFlashFileSystemFile(const char *path, void *buf, u32 size);
+/* Hint: ISFS means "Internal Storage File System". */
+void *utilsReadFileFromIsfs(const char *path, u32 *out_size);
+bool utilsWriteFileToIsfs(const char *path, void *buf, u32 size);
 
 #ifdef BACKUP_U8_ARCHIVE
 bool utilsMountSdCard(void);
 void utilsUnmountSdCard(void);
-#endif
+
+void *utilsReadFileFromMountedDevice(const char *path, u32 *out_size);
+bool utilsWriteFileToMountedDevice(const char *path, void *buf, u32 size);
+#endif  /* BACKUP_U8_ARCHIVE */
 
 #endif /* __UTILS_H__ */

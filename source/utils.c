@@ -39,7 +39,7 @@ static fstats g_isfsFileStats ATTRIBUTE_ALIGN(32) = {0};
 
 #ifdef BACKUP_U8_ARCHIVE
 static bool g_sdCardMounted = false;
-#endif
+#endif  /* BACKUP_U8_ARCHIVE */
 
 /* Function prototypes. */
 
@@ -208,7 +208,7 @@ void utilsPrintHeadline(void)
     
     CON_GetMetrics(&cols, &rows);
     
-    printf(APP_NAME " v" VERSION ".");
+    printf(APP_NAME " v" APP_VERSION ".");
     
     sprintf(ios_info, "IOS%d (v%d)", IOS_GetVersion(), IOS_GetRevision());
     printf("\x1b[%d;%dH", 0, cols - strlen(ios_info) - 1);
@@ -267,9 +267,9 @@ out:
     return stmd;
 }
 
-void *utilsReadFileFromFlashFileSystem(const char *path, u32 *out_size)
+void *utilsReadFileFromIsfs(const char *path, u32 *out_size)
 {
-    if (!path || !strlen(path) || !out_size) return NULL;
+    if (!path || !*path || !out_size) return NULL;
     
     s32 ret = 0;
     u8 *buf = NULL;
@@ -327,9 +327,9 @@ out:
     return (void*)buf;
 }
 
-bool utilsWriteDataToFlashFileSystemFile(const char *path, void *buf, u32 size)
+bool utilsWriteFileToIsfs(const char *path, void *buf, u32 size)
 {
-    if (!path || !strlen(path) || !buf || !size) return false;
+    if (!path || !*path || !buf || !size) return false;
     
     s32 ret = 0;
     bool success = false;
@@ -374,7 +374,92 @@ void utilsUnmountSdCard(void)
     __io_wiisd.shutdown();
     g_sdCardMounted = false;
 }
-#endif
+
+void *utilsReadFileFromMountedDevice(const char *path, u32 *out_size)
+{
+    if (!path || !*path || !out_size) return NULL;
+    
+    FILE *fd = NULL;
+    size_t filesize = 0, res = 0;
+    u8 *buf = NULL;
+    bool success = false;
+    
+    fd = fopen(path, "rb");
+    if (!fd)
+    {
+        ERROR_MSG("fopen(\"%s\") failed!", path);
+        return NULL;
+    }
+    
+    fseek(fd, 0, SEEK_END);
+    filesize = (u32)ftell(fd);
+    rewind(fd);
+    
+    if (!filesize)
+    {
+        ERROR_MSG("\"%s\" is empty!", path);
+        goto out;
+    }
+    
+    buf = (u8*)utilsAllocateMemory(filesize);
+    if (!buf)
+    {
+        ERROR_MSG("Failed to allocate memory for \"%s\"!", path);
+        goto out;
+    }
+    
+    res = fread(buf, 1, filesize, fd);
+    if (res != filesize)
+    {
+        ERROR_MSG("fread(\"%s\") failed! Read 0x%X, expected 0x%X.", res, filesize);
+        goto out;
+    }
+    
+    *out_size = filesize;
+    success = true;
+    
+out:
+    if (!success && buf)
+    {
+        free(buf);
+        buf = NULL;
+    }
+    
+    fclose(fd);
+    
+    return (void*)buf;
+}
+
+bool utilsWriteFileToMountedDevice(const char *path, void *buf, u32 size)
+{
+    if (!path || !*path || !buf || !size) return false;
+    
+    FILE *fd = NULL;
+    size_t res = 0;
+    bool success = false;
+    
+    fd = fopen(path, "wb");
+    if (!fd)
+    {
+        ERROR_MSG("fopen(\"%s\") failed!", path);
+        return false;
+    }
+    
+    res = fwrite(buf, 1, size, fd);
+    if (res != size)
+    {
+        ERROR_MSG("fwrite(\"%s\") failed! Wrote 0x%X, expected 0x%X.", res, size);
+        goto out;
+    }
+    
+    success = true;
+    
+out:
+    fclose(fd);
+    
+    return success;
+}
+#endif  /* BACKUP_U8_ARCHIVE */
 
 static u32 utilsButtonsDownAll(void)
 {
