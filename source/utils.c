@@ -376,6 +376,33 @@ void utilsUnmountSdCard(void)
     g_sdCardMounted = false;
 }
 
+bool utilsGetFileSystemStatsByPath(const char *path, u64 *out_total, u64 *out_free)
+{
+    char *name_end = NULL, stat_path[32] = {0};
+    struct statvfs info = {0};
+    int ret = -1;
+    
+    if (!path || !*path || !(name_end = strchr(path, ':')) || *(name_end + 1) != '/' || (!out_total && !out_free))
+    {
+        ERROR_MSG("Invalid parameters!");
+        return false;
+    }
+    
+    name_end += 2;
+    sprintf(stat_path, "%.*s", (int)(name_end - path), path);
+    
+    if ((ret = statvfs(stat_path, &info)) != 0)
+    {
+        ERROR_MSG("statvfs(\"%s\") failed! (%d, %d).", path, ret, errno);
+        return false;
+    }
+    
+    if (out_total) *out_total = ((u64)info.f_blocks * (u64)info.f_frsize);
+    if (out_free) *out_free = ((u64)info.f_bfree * (u64)info.f_frsize);
+    
+    return true;
+}
+
 void *utilsReadFileFromMountedDevice(const char *path, u32 *out_size)
 {
     if (!path || !*path || !out_size) return NULL;
@@ -438,6 +465,19 @@ bool utilsWriteFileToMountedDevice(const char *path, void *buf, u32 size)
     FILE *fd = NULL;
     size_t res = 0;
     bool success = false;
+    u64 free_space = 0;
+    
+    if (!utilsGetFileSystemStatsByPath(path, NULL, &free_space))
+    {
+        ERROR_MSG("Failed to retrieve free FS space!");
+        return false;
+    }
+    
+    if (free_space < (u64)size)
+    {
+        ERROR_MSG("Not enough free space available! Required 0x%X, available 0x%llX.", size, free_space);
+        return false;
+    }
     
     fd = fopen(path, "wb");
     if (!fd)

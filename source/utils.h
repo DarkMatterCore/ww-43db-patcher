@@ -108,6 +108,8 @@ bool utilsWriteFileToIsfs(const char *path, void *buf, u32 size);
 bool utilsMountSdCard(void);
 void utilsUnmountSdCard(void);
 
+bool utilsGetFileSystemStatsByPath(const char *path, u64 *out_total, u64 *out_free);
+
 void *utilsReadFileFromMountedDevice(const char *path, u32 *out_size);
 bool utilsWriteFileToMountedDevice(const char *path, void *buf, u32 size);
 #endif  /* BACKUP_U8_ARCHIVE */
