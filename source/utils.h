@@ -67,7 +67,7 @@ typedef enum {
 
 void *utilsAllocateMemory(size_t size);
 
-void utilsPrintErrorMessage(const char *func_name, const char *fmt, ...);
+__attribute__((format(printf, 2, 3))) void utilsPrintErrorMessage(const char *func_name, const char *fmt, ...);
 
 bool utilsIsWiiU(void);
 

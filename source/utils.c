@@ -57,7 +57,7 @@ void *utilsAllocateMemory(size_t size)
     return ptr;
 }
 
-void utilsPrintErrorMessage(const char *func_name, const char *fmt, ...)
+__attribute__((format(printf, 2, 3))) void utilsPrintErrorMessage(const char *func_name, const char *fmt, ...)
 {
     va_list args;
     
@@ -214,7 +214,8 @@ void utilsPrintHeadline(void)
     printf("\x1b[%d;%dH", 0, cols - strlen(ios_info) - 1);
     printf(ios_info);
     
-    printf("\nMade by DarkMatterCore.\n\n");
+    printf("\nBuilt on " __DATE__ " - " __TIME__ ".\n");
+    printf("Made by DarkMatterCore.\n\n");
 }
 
 signed_blob *utilsGetSignedTMDFromTitle(u64 title_id, u32 *out_size)
@@ -387,7 +388,7 @@ void *utilsReadFileFromMountedDevice(const char *path, u32 *out_size)
     fd = fopen(path, "rb");
     if (!fd)
     {
-        ERROR_MSG("fopen(\"%s\") failed!", path);
+        ERROR_MSG("fopen(\"%s\") failed! (%d).", path, errno);
         return NULL;
     }
     
@@ -411,7 +412,7 @@ void *utilsReadFileFromMountedDevice(const char *path, u32 *out_size)
     res = fread(buf, 1, filesize, fd);
     if (res != filesize)
     {
-        ERROR_MSG("fread(\"%s\") failed! Read 0x%X, expected 0x%X.", res, filesize);
+        ERROR_MSG("fread(\"%s\") failed! (%d). Read 0x%X, expected 0x%X.", path, errno, res, filesize);
         goto out;
     }
     
@@ -441,14 +442,14 @@ bool utilsWriteFileToMountedDevice(const char *path, void *buf, u32 size)
     fd = fopen(path, "wb");
     if (!fd)
     {
-        ERROR_MSG("fopen(\"%s\") failed!", path);
+        ERROR_MSG("fopen(\"%s\") failed! (%d).", path, errno);
         return false;
     }
     
     res = fwrite(buf, 1, size, fd);
     if (res != size)
     {
-        ERROR_MSG("fwrite(\"%s\") failed! Wrote 0x%X, expected 0x%X.", res, size);
+        ERROR_MSG("fwrite(\"%s\") failed! (%d). Wrote 0x%X, expected 0x%X.", path, errno, res, size);
         goto out;
     }
     

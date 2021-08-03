@@ -108,7 +108,7 @@ int main(int argc, char **argv)
     
     printf("Press + to patch the WiiWare aspect ratio database (43DB).\n");
 #ifdef BACKUP_U8_ARCHIVE
-    printf("Press - to restore a previously created backup of the System Menu U8 archive.\n");
+    printf("Press - to restore a backup of the System Menu U8 archive.\n");
 #endif  /* BACKUP_U8_ARCHIVE */
     printf("Press HOME to exit.\n\n");
     

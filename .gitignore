@@ -1,3 +1,4 @@
-/build
-/*.elf
-/*.dol
+build
+*.elf
+*.dol
+.vscode
