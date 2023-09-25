@@ -34,9 +34,10 @@ typedef struct {
 } AspectRatioDatabase;
 
 typedef enum {
-    AspectRatioDatabaseType_Disc           = 0,
-    AspectRatioDatabaseType_VirtualConsole = 1,
-    AspectRatioDatabaseType_WiiWare        = 2
+    AspectRatioDatabaseType_Disc            = 0,
+    AspectRatioDatabaseType_VirtualConsole  = 1,
+    AspectRatioDatabaseType_WiiWare         = 2,
+    AspectRatioDatabaseType_WiiWareWC24Only = 3
 } AspectRatioDatabaseType;
 
 /// Patches an aspect ratio database stored inside the System Menu's U8 archive.

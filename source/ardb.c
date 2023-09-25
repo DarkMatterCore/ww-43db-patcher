@@ -23,10 +23,15 @@
 #include "u8.h"
 #include "sha1.h"
 
+#define ARDB_DUMMY_ENTRY        0x5A5A5A00  // "ZZZ."
+#define ARDB_WC24_EVC_ENTRY     0x48414A    // "HAJ" - Everybody Votes Channel
+#define ARDB_WC24_CMOC_ENTRY    0x484150    // "HAP" - Check Mii Out Channel
+
 static const char *g_ardbArchivePaths[] = {
     "/titlelist/discdb.bin",
     "/titlelist/vcadb.bin",
-    "/titlelist/wwdb.bin"
+    "/titlelist/wwdb.bin",
+    "/titlelist/wwdb.bin"       // Used with the WC24-only option.
 };
 
 static const u8 g_ardbArchivePathsCount = (u8)MAX_ELEMENTS(g_ardbArchivePaths);
@@ -164,7 +169,16 @@ bool ardbPatchDatabaseFromSystemMenuArchive(u8 type)
 #endif  /* DISPLAY_ARDB_ENTRIES */
 
     /* Patch aspect ratio database. */
-    for(u32 i = 0; i < ardb->entry_count; i++) ardb->entries[i] = 0x5A5A5A00; /* "ZZZ.". */
+    for(u32 i = 0; i < ardb->entry_count; i++)
+    {
+        if (type == AspectRatioDatabaseType_WiiWareWC24Only)
+        {
+            u32 val = (ardb->entries[i] >> 8);
+            if (val != ARDB_WC24_EVC_ENTRY && val != ARDB_WC24_CMOC_ENTRY) continue;
+        }
+
+        ardb->entries[i] = ARDB_DUMMY_ENTRY;
+    }
 
     /* Save modified aspect ratio database data to U8 archive buffer. */
     if (!u8SaveFileData(&u8_ctx, u8_node, ardb_data, ardb_data_size))
