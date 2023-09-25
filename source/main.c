@@ -1,7 +1,7 @@
 /*
  * main.c
  *
- * Copyright (c) 2020, DarkMatterCore <pabloacurielz@gmail.com>.
+ * Copyright (c) 2020-2023, DarkMatterCore <pabloacurielz@gmail.com>.
  *
  * This file is part of ww-43db-patcher (https://github.com/DarkMatterCore/ww-43db-patcher).
  *
@@ -29,20 +29,20 @@ int main(int argc, char **argv)
 {
     (void)argc;
     (void)argv;
-    
+
     int ret = 0;
     bool vwii = utilsIsWiiU(), bail = false;
-    
+
     /* Set reload time to 10 seconds in case an exception is triggered. */
     __exception_setreload(10);
-    
+
     /* Initialize video output and controllers. */
     utilsInitConsole(vwii);
     utilsInitPads();
-    
+
     /* Print headline. */
     utilsPrintHeadline();
-    
+
     /* Check if we're running under vWii (Wii U). */
     if (!vwii)
     {
@@ -50,7 +50,7 @@ int main(int argc, char **argv)
         ret = -1;
         goto out;
     }
-    
+
     /* Check if we have full hardware access (HW_AHBPROT flag disabled). */
     if (!AHBPROT_DISABLED)
     {
@@ -65,10 +65,10 @@ int main(int argc, char **argv)
         ret = -2;
         goto out;
     }
-    
+
     /* Apply runtime IOS patches. */
     printf("Applying runtime IOS patches, please wait... ");
-    
+
     ret = IosPatch_RUNTIME(true, false, false, false);
     if (ret <= 0)
     {
@@ -76,12 +76,12 @@ int main(int argc, char **argv)
         ret = -3;
         goto out;
     }
-    
+
     printf("OK!\n");
-    
+
     /* Initialize NAND filesystem driver. */
     printf("Initializing NAND FS driver... ");
-    
+
     ret = ISFS_Initialize();
     if (ret < 0)
     {
@@ -89,46 +89,46 @@ int main(int argc, char **argv)
         ret = -4;
         goto out;
     }
-    
+
     printf("OK!\n");
-    
+
 #ifdef BACKUP_U8_ARCHIVE
     /* Mount SD card. */
     printf("Mounting SD card... ");
-    
+
     if (!utilsMountSdCard())
     {
         printf("FAILED!");
         ret = -5;
         goto out;
     }
-    
+
     printf("OK!\n\n");
 #endif  /* BACKUP_U8_ARCHIVE */
-    
+
     printf("Press + to patch the WiiWare aspect ratio database (43DB).\n");
 #ifdef BACKUP_U8_ARCHIVE
     printf("Press - to restore a backup of the System Menu U8 archive.\n");
 #endif  /* BACKUP_U8_ARCHIVE */
     printf("Press HOME to exit.\n\n");
-    
+
     fflush(stdout);
-    
+
     while(true)
     {
         u32 pressed = utilsGetInput(UtilsInputType_Down);
-        
+
         if (pressed == WPAD_BUTTON_PLUS)
         {
             /* Patch WiiWare aspect ratio database. */
             printf("Patching WiiWare aspect ratio database...\n\n");
-            
+
             if (!ardbPatchDatabaseFromSystemMenuArchive(AspectRatioDatabaseType_WiiWare))
             {
                 ret = -6;
                 goto out;
             }
-            
+
             break;
         } else
 #ifdef BACKUP_U8_ARCHIVE
@@ -136,13 +136,13 @@ int main(int argc, char **argv)
         {
             /* Restore System Menu U8 archive backup. */
             printf("Restoring System Menu U8 archive...\n\n");
-            
+
             if (!ardbRestoreSystemMenuArchive())
             {
                 ret = -7;
                 goto out;
             }
-            
+
             break;
         } else
 #endif  /* BACKUP_U8_ARCHIVE */
@@ -153,21 +153,21 @@ int main(int argc, char **argv)
             break;
         }
     }
-    
+
     if (!bail) printf("Process completed. Press any button to exit.");
-    
+
 out:
 #ifdef BACKUP_U8_ARCHIVE
     utilsUnmountSdCard();
 #endif  /* BACKUP_U8_ARCHIVE */
-    
+
     ISFS_Deinitialize();
-    
+
     if (ret != 0) printf("\n\nProcess cannot continue. Press any button to exit.");
-    
+
     if (!bail) utilsWaitForButtonPress();
-    
+
     utilsReboot();
-    
+
     return ret;
 }
