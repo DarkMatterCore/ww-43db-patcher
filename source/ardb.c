@@ -92,10 +92,10 @@ bool ardbPatchDatabaseFromSystemMenuArchive(u8 type)
 
 #ifdef BACKUP_U8_ARCHIVE
     /* Calculate U8 archive content hash. */
-    SHA1(sysmenu_archive_content_data, sysmenu_archive_content_size, sysmenu_archive_content_hash);
+    sha1CalculateHash(sysmenu_archive_content_data, sysmenu_archive_content_size, sysmenu_archive_content_hash);
 
     /* Compare hashes. */
-    hash_match = (memcmp(sysmenu_archive_content->hash, sysmenu_archive_content_hash, SHA1HashSize) == 0);
+    hash_match = (memcmp(sysmenu_archive_content->hash, sysmenu_archive_content_hash, SHA1_HASH_SIZE) == 0);
     if (hash_match)
     {
         /* Create output directory. */
@@ -254,10 +254,10 @@ bool ardbRestoreSystemMenuArchive(void)
     }
 
     /* Calculate U8 archive content hash. */
-    SHA1(backup_content_data, backup_content_size, backup_content_hash);
+    sha1CalculateHash(backup_content_data, backup_content_size, backup_content_hash);
 
     /* Compare hashes. */
-    if (memcmp(sysmenu_archive_content->hash, backup_content_hash, SHA1HashSize) != 0)
+    if (memcmp(sysmenu_archive_content->hash, backup_content_hash, SHA1_HASH_SIZE) != 0)
     {
         ERROR_MSG("U8 archive content backup hash mismatch!");
         goto out;

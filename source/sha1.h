@@ -1,71 +1,39 @@
 /*
- *  sha1.h
+ * sha1.h
  *
- *  Description:
- *      This is the header file for code which implements the Secure
- *      Hashing Algorithm 1 as defined in FIPS PUB 180-1 published
- *      April 17, 1995.
+ * Copyright (c) 2023, DarkMatterCore <pabloacurielz@gmail.com>.
  *
- *      Many of the variable names in this code, especially the
- *      single character names, were used because those were the names
- *      used in the publication.
+ * This file is part of ww-43db-patcher (https://github.com/DarkMatterCore/ww-43db-patcher).
  *
- *      Please read the file sha1.c for more information.
+ * ww-43db-patcher is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 2.0.
  *
+ * ww-43db-patcher is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _SHA1_H_
-#define _SHA1_H_
+#pragma once
 
-#include <stdint.h>
+#ifndef __SHA1_H__
+#define __SHA1_H__
 
-/*
- * If you do not have the ISO standard stdint.h header file, then you
- * must typdef the following:
- *    name              meaning
- *  uint32_t         unsigned 32 bit integer
- *  uint8_t          unsigned 8 bit integer (i.e., unsigned char)
- *  int_least16_t    integer of >= 16 bits
- *
- */
+#include <ogc/sha.h>
 
-#ifndef _SHA_enum_
-#define _SHA_enum_
-enum
-{
-    shaSuccess = 0,
-    shaNull,            /* Null pointer parameter */
-    shaInputTooLong,    /* input data too long */
-    shaStateError       /* called Input after Result */
-};
-#endif
+#define SHA1_HASH_SIZE 0x20
 
-#define SHA1HashSize 20
+/// Wrappers for SHA_*() functions within libogc. These make sure the SHA engine is initialized before doing anything.
+/// These do not, however, take care of handling I/O alignment.
+bool sha1ContextCreate(sha_context *ctx);
+bool sha1ContextUpdate(sha_context *ctx, const void *src, const u32 size);
+bool sha1ContextGetHash(sha_context *ctx, const void *src, const u32 size, void *dst);
 
-/*
- *  This structure will hold context information for the SHA-1
- *  hashing operation
- */
-typedef struct SHA1Context
-{
-	uint32_t Intermediate_Hash[SHA1HashSize/4];	/* Message Digest  */
-	
-	uint32_t Length_Low;						/* Message length in bits      */
-	uint32_t Length_High;						/* Message length in bits      */
-	
-	int_least16_t Message_Block_Index;			/* Index into message block array   */
-	uint8_t Message_Block[64];					/* 512-bit message blocks      */
-	
-	int Computed;								/* Is the digest computed?         */
-	int Corrupted;								/* Is the message digest corrupted? */
-} SHA1Context;
+/// Simple all-in-one SHA-1 calculator. Handles I/O alignment if needed.
+bool sha1CalculateHash(const void *src, const u32 size, void *dst);
 
-/*
- *  Function Prototypes
- */
-int SHA1Reset(SHA1Context *context);
-int SHA1Input(SHA1Context *context, uint8_t *message_array, unsigned int length);
-int SHA1Result(SHA1Context *context, uint8_t Message_Digest[SHA1HashSize]);
-int SHA1(uint8_t *message_array, unsigned int length, uint8_t Message_Digest[SHA1HashSize]);
-
-#endif
+#endif /* __SHA1_H__ */

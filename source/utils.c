@@ -49,9 +49,9 @@ static u32 utilsButtonsHeldAll(void);
 void *utilsAllocateMemory(size_t size)
 {
     void *ptr = NULL;
-    size_t aligned_size = ALIGN_UP(size, 32);
+    size_t aligned_size = ALIGN_UP(size, 64);
 
-    ptr = memalign(32, aligned_size);
+    ptr = memalign(64, aligned_size);
     if (ptr) memset(ptr, 0, aligned_size);
 
     return ptr;
