@@ -16,28 +16,42 @@ include $(DEVKITPPC)/wii_rules
 # INCLUDES is a list of directories containing extra header files
 #---------------------------------------------------------------------------------
 
-VERSION_MAJOR := 0
-VERSION_MINOR := 2
+GIT_BRANCH		:=	$(shell git rev-parse --abbrev-ref HEAD)
+GIT_COMMIT		:=	$(shell git rev-parse --short HEAD)
+GIT_REV			:=	${GIT_BRANCH}-${GIT_COMMIT}
 
-APP_NAME	:=	ww-43db-patcher
-APP_VERSION	:=  ${VERSION_MAJOR}.${VERSION_MINOR}
+ifneq (,$(strip $(shell git status --porcelain 2>/dev/null)))
+GIT_REV			:=	$(GIT_REV)-dirty
+endif
 
-TARGET		:=	boot
-BUILD		:=	build
-SOURCES		:=	source
-DATA		:=	
-INCLUDES	:=	
+VERSION_MAJOR	:=	0
+VERSION_MINOR	:=	2
+
+APP_TITLE		:=	ww-43db-patcher
+APP_AUTHOR		:=	DarkMatterCore
+APP_VERSION		:=	${VERSION_MAJOR}.${VERSION_MINOR}
+
+BUILD_TIMESTAMP	:=	$(strip $(shell date --utc '+%Y-%m-%d %T UTC'))
+
+TARGET			:=	boot
+BUILD			:=	build
+SOURCES			:=	source
+DATA			:=
+INCLUDES		:=
 
 #---------------------------------------------------------------------------------
 # options for code generation
 #---------------------------------------------------------------------------------
 
-CFLAGS	=	-g -O2 -Wall -Wextra $(MACHDEP) $(INCLUDE)
-CFLAGS	+=	-DVERSION_MAJOR=${VERSION_MAJOR} -DVERSION_MINOR=${VERSION_MINOR} -DAPP_NAME=\"${APP_NAME}\" -DAPP_VERSION=\"${APP_VERSION}\"
+CFLAGS		:=	-g -O2 -Wall -Wextra -Werror $(MACHDEP) $(INCLUDE)
+CFLAGS		+=	-DGIT_BRANCH=\"${GIT_BRANCH}\" -DGIT_COMMIT=\"${GIT_COMMIT}\" -DGIT_REV=\"${GIT_REV}\"
+CFLAGS		+=	-DVERSION_MAJOR=${VERSION_MAJOR} -DVERSION_MINOR=${VERSION_MINOR}
+CFLAGS		+=	-DAPP_TITLE=\"${APP_TITLE}\" -DAPP_AUTHOR=\"${APP_AUTHOR}\" -DAPP_VERSION=\"${APP_VERSION}\"
+CFLAGS		+=	-DBUILD_TIMESTAMP="\"${BUILD_TIMESTAMP}\""
 
-CXXFLAGS	=	$(CFLAGS)
+CXXFLAGS	:=	$(CFLAGS)
 
-LDFLAGS	=	-g $(MACHDEP) -Wl,-Map,$(notdir $@).map
+LDFLAGS		:=	-g $(MACHDEP) -Wl,-Map,$(notdir $@).map
 
 #---------------------------------------------------------------------------------
 # any extra libraries we wish to link with the project

@@ -211,14 +211,14 @@ void utilsPrintHeadline(void)
 
     CON_GetMetrics(&cols, &rows);
 
-    printf(APP_NAME " v" APP_VERSION ".");
+    printf(APP_TITLE " v" APP_VERSION " (" GIT_REV ").");
 
     sprintf(ios_info, "IOS%d (v%d)", IOS_GetVersion(), IOS_GetRevision());
     printf("\x1b[%d;%dH", 0, cols - strlen(ios_info) - 1);
     printf(ios_info);
 
-    printf("\nBuilt on " __DATE__ " - " __TIME__ ".\n");
-    printf("Made by DarkMatterCore.\n\n");
+    printf("\nBuilt on " BUILD_TIMESTAMP ".\n");
+    printf("Made by " APP_AUTHOR ".\n\n");
 }
 
 signed_blob *utilsGetSignedTMDFromTitle(u64 title_id, u32 *out_size)

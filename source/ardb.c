@@ -104,7 +104,7 @@ bool ardbPatchDatabaseFromSystemMenuArchive(u8 type)
     if (hash_match)
     {
         /* Create output directory. */
-        sprintf(backup_path, "sd:/" APP_NAME "_bkp");
+        sprintf(backup_path, "sd:/" APP_TITLE "_bkp");
         mkdir(backup_path, 0777);
 
         /* Generate backup content path. */
@@ -209,7 +209,7 @@ out:
 #ifdef BACKUP_U8_ARCHIVE
     if (hash_match && !backup_created)
     {
-        sprintf(backup_path, "sd:/" APP_NAME "_bkp");
+        sprintf(backup_path, "sd:/" APP_TITLE "_bkp");
         remove(backup_path);
     }
 #endif  /* BACKUP_U8_ARCHIVE */
@@ -256,7 +256,7 @@ bool ardbRestoreSystemMenuArchive(void)
     sprintf(content_path, "/title/%08x/%08x/content/%08x.app", TITLE_UPPER(SYSTEM_MENU_TID), TITLE_LOWER(SYSTEM_MENU_TID), sysmenu_archive_content->cid);
 
     /* Generate backup content path. */
-    sprintf(backup_path, "sd:/" APP_NAME "_bkp");
+    sprintf(backup_path, "sd:/" APP_TITLE "_bkp");
     strcat(backup_path, strrchr(content_path, '/'));
 
     /* Read whole backup content file. */
