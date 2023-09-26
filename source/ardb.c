@@ -38,7 +38,7 @@ static const u8 g_ardbArchivePathsCount = (u8)MAX_ELEMENTS(g_ardbArchivePaths);
 
 bool ardbPatchDatabaseFromSystemMenuArchive(u8 type)
 {
-    if (type > g_ardbArchivePathsCount)
+    if (type >= g_ardbArchivePathsCount)
     {
         ERROR_MSG("Invalid aspect ratio database type value!");
         return false;

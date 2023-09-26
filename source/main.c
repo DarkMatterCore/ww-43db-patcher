@@ -106,8 +106,8 @@ int main(int argc, char **argv)
     printf("OK!\n\n");
 #endif  /* BACKUP_U8_ARCHIVE */
 
-    printf("Press + to patch the WiiWare aspect ratio database (WW 43DB).\n");
-    printf("Press 1/Y to *only* patch WC24 channel entries within the WW 43DB.\n");
+    printf("Press 1/Y to patch the WiiWare aspect ratio database (WW 43DB).\n");
+    printf("Press 2/X to *only* patch WC24 channel entries within the WW 43DB.\n");
 #ifdef BACKUP_U8_ARCHIVE
     printf("Press - to restore a backup of the System Menu U8 archive.\n");
 #endif  /* BACKUP_U8_ARCHIVE */
@@ -118,9 +118,9 @@ int main(int argc, char **argv)
     while(true)
     {
         u32 pressed = utilsGetInput(UtilsInputType_Down);
-        bool wc24_only = (pressed == WPAD_BUTTON_1);
+        bool wc24_only = (pressed == WPAD_BUTTON_2);
 
-        if (pressed == WPAD_BUTTON_PLUS || wc24_only)
+        if (pressed == WPAD_BUTTON_1 || wc24_only)
         {
             /* Patch WiiWare aspect ratio database. */
             printf("Patching WiiWare aspect ratio database (%s entries)...\n\n", wc24_only ? "WC24" : "all");

@@ -121,6 +121,9 @@ u32 utilsGetInput(int type)
     if (pressed & WPAD_CLASSIC_BUTTON_LEFT) pressed |= WPAD_BUTTON_LEFT;
     if (pressed & WPAD_CLASSIC_BUTTON_RIGHT) pressed |= WPAD_BUTTON_RIGHT;
 
+    /* Keep only the lower u16. */
+    pressed &= 0xFFFF;
+
     return pressed;
 }
 
@@ -274,9 +277,10 @@ void *utilsReadFileFromIsfs(const char *path, u32 *out_size)
 
     s32 ret = 0;
     u8 *buf = NULL;
+    u32 file_size = 0;
     bool success = false;
 
-    snprintf(g_isfsFilePath, ISFS_MAXPATH, path);
+    snprintf(g_isfsFilePath, ISFS_MAXPATH, "%s", path);
 
     g_isfsFd = ISFS_Open(g_isfsFilePath, ISFS_OPEN_READ);
     if (g_isfsFd < 0)
@@ -292,27 +296,28 @@ void *utilsReadFileFromIsfs(const char *path, u32 *out_size)
         goto out;
     }
 
-    if (!g_isfsFileStats.file_length)
+    file_size = g_isfsFileStats.file_length;
+    if (!file_size)
     {
         ERROR_MSG("\"%s\" is empty!", g_isfsFilePath);
         goto out;
     }
 
-    buf = (u8*)utilsAllocateMemory(g_isfsFileStats.file_length);
+    buf = (u8*)utilsAllocateMemory(file_size);
     if (!buf)
     {
         ERROR_MSG("Failed to allocate memory for \"%s\"!", g_isfsFilePath);
         goto out;
     }
 
-    ret = ISFS_Read(g_isfsFd, buf, g_isfsFileStats.file_length);
+    ret = ISFS_Read(g_isfsFd, buf, file_size);
     if (ret < 0)
     {
         ERROR_MSG("ISFS_Read(\"%s\") failed! (%d).", g_isfsFilePath, ret);
         goto out;
     }
 
-    *out_size = g_isfsFileStats.file_length;
+    *out_size = file_size;
     success = true;
 
 out:
@@ -335,7 +340,7 @@ bool utilsWriteFileToIsfs(const char *path, void *buf, u32 size)
     s32 ret = 0;
     bool success = false;
 
-    snprintf(g_isfsFilePath, ISFS_MAXPATH, path);
+    snprintf(g_isfsFilePath, ISFS_MAXPATH, "%s", path);
 
     g_isfsFd = ISFS_Open(g_isfsFilePath, ISFS_OPEN_WRITE);
     if (g_isfsFd < 0)
@@ -458,7 +463,7 @@ out:
     return (void*)buf;
 }
 
-bool utilsWriteFileToMountedDevice(const char *path, void *buf, u32 size)
+bool utilsWriteFileToMountedDevice(const char *path, const void *buf, u32 size)
 {
     if (!path || !*path || !buf || !size) return false;
 
