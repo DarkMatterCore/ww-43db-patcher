@@ -56,7 +56,7 @@ bool sha1CalculateHash(const void *src, const u32 size, void *dst)
     bool ret = false;
 
     sha_context ctx ATTRIBUTE_ALIGN(32) = {0};
-    u8 hash[SHA1_HASH_SIZE] ATTRIBUTE_ALIGN(32) = {0};
+    sha1 hash ATTRIBUTE_ALIGN(32) = {0};
 
     u8 *src_u8 = NULL;
     bool src_aligned = IS_ALIGNED((u32)src, 64);
@@ -82,7 +82,7 @@ bool sha1CalculateHash(const void *src, const u32 size, void *dst)
     if (!ret) goto end;
 
     /* Copy checksum to destination pointer. */
-    memcpy(dst, hash, SHA1_HASH_SIZE);
+    memcpy(dst, hash, sizeof(hash));
 
 end:
     sha1EngineClose();

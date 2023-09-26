@@ -25,7 +25,7 @@
 
 #include <ogc/sha.h>
 
-#define SHA1_HASH_SIZE 0x20
+#define SHA1_HASH_SIZE 20
 
 /// Wrappers for SHA_*() functions within libogc. These make sure the SHA engine is initialized before doing anything.
 /// These do not, however, take care of handling I/O alignment.
