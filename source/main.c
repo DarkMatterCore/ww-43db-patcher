@@ -106,10 +106,10 @@ int main(int argc, char **argv)
     printf("OK!\n\n");
 #endif  /* BACKUP_U8_ARCHIVE */
 
-    printf("Press 1/Y to patch the WiiWare aspect ratio database (WW 43DB).\n");
-    printf("Press 2/X to *only* patch WC24 channel entries within the WW 43DB.\n");
+    printf("Press 1/X  to patch the whole WiiWare 4:3 aspect ratio database.\n");
+    printf("Press 2/Y  to only patch WC24 channel entries within the WW 43DB.\n\n");
 #ifdef BACKUP_U8_ARCHIVE
-    printf("Press - to restore a backup of the System Menu U8 archive.\n");
+    printf("Press  -   to restore a backup of the System Menu U8 archive.\n\n");
 #endif  /* BACKUP_U8_ARCHIVE */
     printf("Press HOME to exit.\n\n");
 
@@ -123,7 +123,8 @@ int main(int argc, char **argv)
         if (pressed == WPAD_BUTTON_1 || wc24_only)
         {
             /* Patch WiiWare aspect ratio database. */
-            printf("Patching WiiWare aspect ratio database (%s entries)...\n\n", wc24_only ? "WC24" : "all");
+            utilsPrintHeadline();
+            printf("Patching WW 43DB (%s entries)...\n\n", wc24_only ? "WC24" : "all");
 
             if (!ardbPatchDatabaseFromSystemMenuArchive(wc24_only ? AspectRatioDatabaseType_WiiWareWC24Only : AspectRatioDatabaseType_WiiWare))
             {
@@ -137,6 +138,7 @@ int main(int argc, char **argv)
         if (pressed == WPAD_BUTTON_MINUS)
         {
             /* Restore System Menu U8 archive backup. */
+            utilsPrintHeadline();
             printf("Restoring System Menu U8 archive...\n\n");
 
             if (!ardbRestoreSystemMenuArchive())

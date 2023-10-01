@@ -29,6 +29,7 @@
 
 /// Wrappers for SHA_*() functions within libogc. These make sure the SHA engine is initialized before doing anything.
 /// These do not, however, take care of handling I/O alignment.
+
 bool sha1ContextCreate(sha_context *ctx);
 bool sha1ContextUpdate(sha_context *ctx, const void *src, const u32 size);
 bool sha1ContextGetHash(sha_context *ctx, const void *src, const u32 size, void *dst);

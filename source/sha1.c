@@ -28,7 +28,11 @@ static void sha1EngineClose(void);
 
 #define SHA_ENGINE_WRAPPER(func, ...) \
     bool ret = false; \
-    if (sha1EngineInitialize()) ret = (func(__VA_ARGS__) >= 0); \
+    if (sha1EngineInitialize()) { \
+        s32 rc = func(__VA_ARGS__); \
+        ret = (rc >= 0); \
+        if (!ret) ERROR_MSG(#func "() failed! (%d).", rc); \
+    } \
     sha1EngineClose(); \
     return ret;
 
@@ -55,17 +59,23 @@ bool sha1CalculateHash(const void *src, const u32 size, void *dst)
 
     bool ret = false;
 
-    sha_context ctx ATTRIBUTE_ALIGN(32) = {0};
-    sha1 hash ATTRIBUTE_ALIGN(32) = {0};
+    s32 rc = 0;
 
     u8 *src_u8 = NULL;
     bool src_aligned = IS_ALIGNED((u32)src, 64);
+
+    sha_context ctx ATTRIBUTE_ALIGN(32) = {0};
+    u8 hash[SHA1_HASH_SIZE] ATTRIBUTE_ALIGN(32) = {0};
 
     /* Handle data alignment (if needed). */
     if (!src_aligned)
     {
         u8 *tmp = utilsAllocateMemory(size);
-        if (!tmp) goto end;
+        if (!tmp)
+        {
+            ERROR_MSG("Failed to allocate memory for aligned 0x%X-byte long buffer!", size);
+            goto end;
+        }
 
         memcpy(tmp, src, size);
 
@@ -74,19 +84,36 @@ bool sha1CalculateHash(const void *src, const u32 size, void *dst)
         src_u8 = (u8*)src;
     }
 
-    /* Initialize SHA engine and context. */
-    if (!sha1EngineInitialize() || SHA_InitializeContext(&ctx) < 0) goto end;
+    /* Initialize SHA engine. */
+    if (!sha1EngineInitialize()) goto end;
+
+    /* Initialize SHA context. */
+    rc = SHA_InitializeContext(&ctx);
+    if (rc < 0)
+    {
+        ERROR_MSG("SHA_InitializeContext() failed! (%d).", rc);
+        goto end;
+    }
 
     /* Calculate SHA checksum. */
-    ret = (SHA_Calculate(&ctx, src_u8, size, hash) >= 0);
-    if (!ret) goto end;
+    rc = SHA_Calculate(&ctx, src_u8, size, hash);
+    if (rc < 0)
+    {
+        ERROR_MSG("SHA_InitializeContext() failed! (%d).", rc);
+        goto end;
+    }
 
     /* Copy checksum to destination pointer. */
     memcpy(dst, hash, sizeof(hash));
 
+    /* Update return value. */
+    ret = true;
+
 end:
+    /* Close SHA engine. */
     sha1EngineClose();
 
+    /* Free allocated buffer, if needed. */
     if (!src_aligned && src_u8) free(src_u8);
 
     return ret;
@@ -95,13 +122,19 @@ end:
 static bool sha1EngineInitialize(void)
 {
     if (g_sha1EngineInitialized) return true;
-    g_sha1EngineInitialized = (SHA_Init() >= 0);
+
+    s32 rc = SHA_Init();
+    g_sha1EngineInitialized = (rc >= 0);
+    if (!g_sha1EngineInitialized) ERROR_MSG("SHA_Init() failed! (%d).", rc);
+
     return g_sha1EngineInitialized;
 }
 
 static void sha1EngineClose(void)
 {
     if (!g_sha1EngineInitialized) return;
+
     SHA_Close();
+
     g_sha1EngineInitialized = false;
 }

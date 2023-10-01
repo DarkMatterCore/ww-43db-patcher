@@ -112,8 +112,8 @@ u32 utilsGetInput(int type)
 
     if (pressed & WPAD_CLASSIC_BUTTON_A) pressed |= WPAD_BUTTON_A;
     if (pressed & WPAD_CLASSIC_BUTTON_B) pressed |= WPAD_BUTTON_B;
-    if (pressed & WPAD_CLASSIC_BUTTON_X) pressed |= WPAD_BUTTON_2;
-    if (pressed & WPAD_CLASSIC_BUTTON_Y) pressed |= WPAD_BUTTON_1;
+    if (pressed & WPAD_CLASSIC_BUTTON_X) pressed |= WPAD_BUTTON_1;
+    if (pressed & WPAD_CLASSIC_BUTTON_Y) pressed |= WPAD_BUTTON_2;
     if (pressed & WPAD_CLASSIC_BUTTON_HOME) pressed |= WPAD_BUTTON_HOME;
 
     if (pressed & WPAD_CLASSIC_BUTTON_UP) pressed |= WPAD_BUTTON_UP;

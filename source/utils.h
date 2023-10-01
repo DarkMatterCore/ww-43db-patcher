@@ -39,7 +39,7 @@
 #define BACKUP_U8_ARCHIVE
 //#define DISPLAY_ARDB_ENTRIES
 
-#define ERROR_MSG(...)                  utilsPrintErrorMessage(__func__, ##__VA_ARGS__)
+#define ERROR_MSG(...)                  utilsPrintErrorMessage(__func__, __VA_ARGS__)
 
 #define MEMBER_SIZE(type, member)       sizeof(((type*)NULL)->member)
 
