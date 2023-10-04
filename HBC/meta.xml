@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <app version="1.1">
 	<name>ww-43db-patcher</name>
-	<version>0.2</version>
-        <release_date>20210227000000</release_date>
+	<version>0.3</version>
+        <release_date>20231001034000</release_date>
 	<coder>DarkMatterCore</coder>
 	<short_description>vWii WiiWare 43DB patcher.</short_description>
-	<long_description>Patches WiiWare aspect ratio database (43DB) from the vWii System Menu U8 archive to stub all of its entries, effectively enabling access to 16:9 aspect ratio in WiiWare titles where 4:3 is otherwise enforced.</long_description>
+	<long_description>Patches the WiiWare 4:3 aspect ratio database (43DB) within vWii's System Menu U8 archive to stub its entries, effectively enabling access to 16:9 aspect ratio in WiiWare titles where 4:3 is otherwise enforced. An option to only patch most demanded WiiConnect24-related channel entries (Everybody Votes Channel, Check Mii Out Channel) is also provided.</long_description>
 	<ahb_access/>
 </app>
