@@ -1,7 +1,7 @@
 /*
  * u8.h
  *
- * Copyright (c) 2020-2023, DarkMatterCore <pabloacurielz@gmail.com>.
+ * Copyright (c) 2020-2024, DarkMatterCore <pabloacurielz@gmail.com>.
  *
  * This file is part of ww-43db-patcher (https://github.com/DarkMatterCore/ww-43db-patcher).
  *
@@ -32,21 +32,23 @@ typedef struct {
     u32 data_offset;            ///< Root node offset + node info block size, aligned to 0x40. Relative to the start of this header.
 } U8Header;
 
+SIZE_ASSERT(U8Header, 0x10);
+
 typedef enum {
     U8NodeType_File      = 0,
     U8NodeType_Directory = 1
 } U8NodeType;
 
 typedef struct {
-    u32 type        : 8;    ///< U8NodeType.
-    u32 name_offset : 24;   ///< Offset to node name. Relative to the start of the string table.
-} U8NodeProperties;
-
-typedef struct {
-    U8NodeProperties properties;    ///< Using a bitfield because of the odd name_offset field size.
-    u32 data_offset;                ///< Files: offset to file data (relative to the start of the U8 header). Directories: parent dir node index (0-based).
-    u32 size;                       ///< Files: data size. Directories: node number from the last file inside this directory (root node is number 1).
+    struct {
+        u32 type        : 8;    ///< U8NodeType.
+        u32 name_offset : 24;   ///< Offset to node name. Relative to the start of the string table.
+    };
+    u32 data_offset;            ///< Files: offset to file data (relative to the start of the U8 header). Directories: parent dir node index (0-based).
+    u32 size;                   ///< Files: data size. Directories: node number from the last file inside this directory (root node is number 1).
 } U8Node;
+
+SIZE_ASSERT(U8Node, 0xC);
 
 typedef struct {
     u8 *u8_buf;
@@ -56,28 +58,28 @@ typedef struct {
     char *str_table;
 } U8Context;
 
-/// Initializes an U8 context.
-bool u8ContextInit(void *buf, U8Context *ctx);
+/// Initializes a U8 context.
+bool u8ContextInit(void *buf, u32 buf_size, U8Context *ctx);
 
-/// Frees an U8 context.
+/// Frees a U8 context.
 void u8ContextFree(U8Context *ctx);
 
-/// Retrieves an U8 directory node by its path.
-/// Its index is saved to the out_node_idx pointer (if provided).
+/// Retrieves a U8 directory node by its path.
+/// Its index is saved to the out_node_idx pointer.
 U8Node *u8GetDirectoryNodeByPath(U8Context *ctx, const char *path, u32 *out_node_idx);
 
-/// Retrieves an U8 file node by its path.
-/// Its index is saved to the out_node_idx pointer (if provided).
+/// Retrieves a U8 file node by its path.
+/// Its index is saved to the out_node_idx pointer.
 U8Node *u8GetFileNodeByPath(U8Context *ctx, const char *path, u32 *out_node_idx);
 
-/// Loads file data from an U8 file node into memory.
+/// Loads file data from a U8 file node into memory.
 /// The returned pointer must be freed by the user.
-u8 *u8LoadFileData(U8Context *ctx, U8Node *file_node, u32 *out_size);
+u8 *u8LoadFileData(U8Context *ctx, u32 file_node_idx, u32 *out_size);
 
-/// Saves file data into an U8 archive loaded into memory.
-bool u8SaveFileData(U8Context *ctx, U8Node *file_node, void *buf, u32 size);
+/// Saves file data into a U8 archive loaded into memory.
+bool u8SaveFileData(U8Context *ctx, u32 file_node_idx, void *buf, u32 size);
 
-/// Retrieves an U8 node by its offset.
+/// Retrieves a U8 node by its offset.
 ALWAYS_INLINE U8Node *u8GetNodeByOffset(U8Context *ctx, u32 offset)
 {
     u32 node_idx = 0;

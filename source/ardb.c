@@ -1,7 +1,7 @@
 /*
  * ardb.c
  *
- * Copyright (c) 2020-2023, DarkMatterCore <pabloacurielz@gmail.com>.
+ * Copyright (c) 2020-2024, DarkMatterCore <pabloacurielz@gmail.com>.
  *
  * This file is part of ww-43db-patcher (https://github.com/DarkMatterCore/ww-43db-patcher).
  *
@@ -23,24 +23,23 @@
 #include "u8.h"
 #include "sha1.h"
 
-#define ARDB_DUMMY_ENTRY        0x5A5A5A00  // "ZZZ."
-#define ARDB_WC24_EVC_ENTRY     0x48414A    // "HAJ" - Everybody Votes Channel
-#define ARDB_WC24_CMOC_ENTRY    0x484150    // "HAP" - Check Mii Out Channel
-
-static const char *g_ardbArchivePaths[] = {
+static const char *g_ardbArchivePaths[AspectRatioDatabaseType_Count] = {
     "/titlelist/discdb.bin",
     "/titlelist/vcadb.bin",
-    "/titlelist/wwdb.bin",
-    "/titlelist/wwdb.bin"       // Used with the WC24-only option.
+    "/titlelist/wwdb.bin"
 };
 
-static const u8 g_ardbArchivePathsCount = (u8)MAX_ELEMENTS(g_ardbArchivePaths);
-
-bool ardbPatchDatabaseFromSystemMenuArchive(u8 type)
+bool ardbPatchDatabaseFromSystemMenuArchive(u8 type, const u32 *entries, const u32 entry_count)
 {
-    if (type >= g_ardbArchivePathsCount)
+    if (type >= AspectRatioDatabaseType_Count)
     {
         ERROR_MSG("Invalid aspect ratio database type value!");
+        return false;
+    }
+
+    if (!entries || !entry_count)
+    {
+        ERROR_MSG("Invalid patch entries array / count!");
         return false;
     }
 
@@ -55,10 +54,10 @@ bool ardbPatchDatabaseFromSystemMenuArchive(u8 type)
     u32 sysmenu_archive_content_size = 0;
 
     U8Context u8_ctx = {0};
-    U8Node *u8_node = NULL;
+    u32 u8_node_idx = 0;
 
     u8 *ardb_data = NULL;
-    u32 ardb_data_size = 0;
+    u32 ardb_data_size = 0, ardb_orig_entry_count = 0;
     AspectRatioDatabase *ardb = NULL;
 
     bool success = false;
@@ -125,21 +124,21 @@ bool ardbPatchDatabaseFromSystemMenuArchive(u8 type)
 #endif  /* BACKUP_U8_ARCHIVE */
 
     /* Initialize U8 context. */
-    if (!u8ContextInit(sysmenu_archive_content_data, &u8_ctx))
+    if (!u8ContextInit(sysmenu_archive_content_data, sysmenu_archive_content_size, &u8_ctx))
     {
         ERROR_MSG("Failed to initialize System Menu U8 archive context!");
         goto out;
     }
 
     /* Get U8 node for the aspect ratio database path. */
-    if (!(u8_node = u8GetFileNodeByPath(&u8_ctx, g_ardbArchivePaths[type], NULL)))
+    if (!u8GetFileNodeByPath(&u8_ctx, g_ardbArchivePaths[type], &u8_node_idx))
     {
         ERROR_MSG("Failed to retrieve U8 node for \"%s\"!", g_ardbArchivePaths[type]);
         goto out;
     }
 
     /* Read aspect ratio database data. */
-    if (!(ardb_data = u8LoadFileData(&u8_ctx, u8_node, &ardb_data_size)) || ardb_data_size < sizeof(AspectRatioDatabase))
+    if (!(ardb_data = u8LoadFileData(&u8_ctx, u8_node_idx, &ardb_data_size)) || ardb_data_size < sizeof(AspectRatioDatabase))
     {
         ERROR_MSG("Failed to read \"%s\" contents from U8 archive!", g_ardbArchivePaths[type]);
         goto out;
@@ -147,6 +146,21 @@ bool ardbPatchDatabaseFromSystemMenuArchive(u8 type)
 
     /* Parse aspect ratio database. */
     ardb = (AspectRatioDatabase*)ardb_data;
+
+    if (ardb->magic != ARDB_MAGIC)
+    {
+        ERROR_MSG("Invalid ARDB magic word for \"%s\": 0x%08X.", g_ardbArchivePaths[type], ardb->magic);
+        goto out;
+    }
+
+    if (!ardb->entry_count || ardb_data_size < (sizeof(AspectRatioDatabase) + (sizeof(u32) * ardb->entry_count)))
+    {
+        ERROR_MSG("Invalid ARDB entry count for \"%s\": %u", g_ardbArchivePaths[type], ardb->entry_count);
+        goto out;
+    }
+
+    ardb_orig_entry_count = ardb->entry_count;
+
     printf("Loaded \"%s\" (v%u, holding %u %s)", g_ardbArchivePaths[type], ardb->version, ardb->entry_count, (ardb->entry_count == 1 ? "entry" : "entries"));
 
 #ifdef DISPLAY_ARDB_ENTRIES
@@ -168,20 +182,43 @@ bool ardbPatchDatabaseFromSystemMenuArchive(u8 type)
     printf(".\n\n");
 #endif  /* DISPLAY_ARDB_ENTRIES */
 
+    fflush(stdout);
+
     /* Patch aspect ratio database. */
-    for(u32 i = 0; i < ardb->entry_count; i++)
+    for(u32 i = 0, j = 0; i < ardb->entry_count; i++, j++)
     {
-        if (type == AspectRatioDatabaseType_WiiWareWC24Only)
+        for(u32 k = 0; k < entry_count; k++)
         {
             u32 val = (ardb->entries[i] >> 8);
-            if (val != ARDB_WC24_EVC_ENTRY && val != ARDB_WC24_CMOC_ENTRY) continue;
-        }
+            if (val != entries[k]) continue;
 
-        ardb->entries[i] = ARDB_DUMMY_ENTRY;
+            /* Jackpot. */
+            printf("Removing 43DB entry #%u: %.*s. (0x%X).\n", j, 3, (char*)&val, val);
+            fflush(stdout);
+
+            if ((i + 1) < ardb->entry_count) memmove(&(ardb->entries[i]), &(ardb->entries[i + 1]), sizeof(u32) * (ardb->entry_count - i - 1));
+            memset(&(ardb->entries[ardb->entry_count - 1]), 0, sizeof(u32));
+
+            ardb->entry_count--;
+            i--;
+
+            break;
+        }
     }
 
+    if (ardb->entry_count == ardb_orig_entry_count)
+    {
+        ERROR_MSG("Unable to locate desired TIDs within \"%s\". No changes have been made.", g_ardbArchivePaths[type]);
+        goto out;
+    }
+
+    printf("\n");
+    fflush(stdout);
+
     /* Save modified aspect ratio database data to U8 archive buffer. */
-    if (!u8SaveFileData(&u8_ctx, u8_node, ardb_data, ardb_data_size))
+    ardb_data_size = (sizeof(AspectRatioDatabase) + (sizeof(u32) * ardb->entry_count));
+
+    if (!u8SaveFileData(&u8_ctx, u8_node_idx, ardb_data, ardb_data_size))
     {
         ERROR_MSG("Failed to save modified aspect ratio database data into U8 archive!");
         goto out;

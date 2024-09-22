@@ -1,7 +1,7 @@
 /*
  * ardb.h
  *
- * Copyright (c) 2020-2023, DarkMatterCore <pabloacurielz@gmail.com>.
+ * Copyright (c) 2020-2024, DarkMatterCore <pabloacurielz@gmail.com>.
  *
  * This file is part of ww-43db-patcher (https://github.com/DarkMatterCore/ww-43db-patcher).
  *
@@ -23,7 +23,10 @@
 #ifndef __ARDB_H__
 #define __ARDB_H__
 
-#define ARDB_MAGIC    (u32)0x34334442 /* "43DB". */
+#define ARDB_MAGIC              (u32)0x34334442 /* "43DB". */
+
+#define ARDB_WC24_EVC_ENTRY     0x48414A        /* "HAJ" - Everybody Votes Channel. */
+#define ARDB_WC24_CMOC_ENTRY    0x484150        /* "HAP" - Check Mii Out Channel. */
 
 typedef struct {
     u32 magic;          ///< ARDB_MAGIC.
@@ -33,15 +36,18 @@ typedef struct {
     u32 entries[];      ///< C99 flexible array with entries.
 } AspectRatioDatabase;
 
+SIZE_ASSERT(AspectRatioDatabase, 0x10);
+
 typedef enum {
     AspectRatioDatabaseType_Disc            = 0,
     AspectRatioDatabaseType_VirtualConsole  = 1,
     AspectRatioDatabaseType_WiiWare         = 2,
-    AspectRatioDatabaseType_WiiWareWC24Only = 3
+    AspectRatioDatabaseType_Count           = 3
 } AspectRatioDatabaseType;
 
-/// Patches an aspect ratio database stored inside the System Menu's U8 archive.
-bool ardbPatchDatabaseFromSystemMenuArchive(u8 type);
+/// Patches an aspect ratio database stored inside the System Menu's U8 archive by removing the desired title IDs from its records.
+/// The entries from the provided u32 array must use a 3-byte representation of the desired title IDs, ignoring the last byte value.
+bool ardbPatchDatabaseFromSystemMenuArchive(u8 type, const u32 *entries, const u32 entry_count);
 
 #ifdef BACKUP_U8_ARCHIVE
 /// Restores a previously created System Menu U8 archive from the inserted SD card.

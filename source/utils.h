@@ -1,7 +1,7 @@
 /*
  * utils.h
  *
- * Copyright (c) 2020-2023, DarkMatterCore <pabloacurielz@gmail.com>.
+ * Copyright (c) 2020-2024, DarkMatterCore <pabloacurielz@gmail.com>.
  *
  * This file is part of ww-43db-patcher (https://github.com/DarkMatterCore/ww-43db-patcher).
  *
@@ -34,6 +34,7 @@
 #include <gccore.h>
 #include <ogc/machine/processor.h>
 #include <wiiuse/wpad.h>
+#include <assert.h>
 
 /* These macros control the behaviour of aspect ratio database patching. */
 #define BACKUP_U8_ARCHIVE
@@ -59,6 +60,8 @@
 #ifndef ALWAYS_INLINE
 #define ALWAYS_INLINE                   __attribute__((always_inline)) static inline
 #endif
+
+#define SIZE_ASSERT(name, size)         static_assert(sizeof(name) == (size), "Bad size for " #name "! Expected " #size ".")
 
 typedef enum {
     UtilsInputType_Down = 0,

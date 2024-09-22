@@ -1,7 +1,7 @@
 /*
  * u8.c
  *
- * Copyright (c) 2020-2023, DarkMatterCore <pabloacurielz@gmail.com>.
+ * Copyright (c) 2020-2024, DarkMatterCore <pabloacurielz@gmail.com>.
  *
  * This file is part of ww-43db-patcher (https://github.com/DarkMatterCore/ww-43db-patcher).
  *
@@ -25,9 +25,9 @@
 
 static U8Node *u8GetChildNodeByName(U8Context *ctx, U8Node *dir_node, u32 *node_idx, const char *name, u8 type);
 
-bool u8ContextInit(void *buf, U8Context *ctx)
+bool u8ContextInit(void *buf, u32 buf_size, U8Context *ctx)
 {
-    if (!buf || !ctx)
+    if (!buf || buf_size <= (u32)sizeof(U8Header) || !ctx)
     {
         ERROR_MSG("Invalid parameters!");
         return false;
@@ -45,7 +45,7 @@ bool u8ContextInit(void *buf, U8Context *ctx)
 
     /* Check header fields. */
     if (u8_header.magic != U8_MAGIC || u8_header.root_node_offset <= (u32)sizeof(U8Header) || u8_header.node_info_block_size <= (u32)sizeof(U8Node) || \
-        u8_header.data_offset != ALIGN_UP(u8_header.root_node_offset + u8_header.node_info_block_size, 0x40))
+        u8_header.data_offset != ALIGN_UP(u8_header.root_node_offset + u8_header.node_info_block_size, 0x40) || u8_header.data_offset >= buf_size)
     {
         ERROR_MSG("Invalid U8 header!");
         return false;
@@ -54,8 +54,8 @@ bool u8ContextInit(void *buf, U8Context *ctx)
     /* Read root U8 node. */
     memcpy(&root_node, u8_buf + u8_header.root_node_offset, sizeof(U8Node));
 
-    /* Check root U8 node. */
-    if (root_node.properties.type != U8NodeType_Directory || root_node.properties.name_offset != 0 || root_node.data_offset != 0 || root_node.size <= 1)
+    /* Validate root U8 node. */
+    if (root_node.type != U8NodeType_Directory || root_node.name_offset != 0 || root_node.data_offset != 0 || root_node.size <= 1)
     {
         ERROR_MSG("Invalid root U8 node!");
         return false;
@@ -103,51 +103,53 @@ bool u8ContextInit(void *buf, U8Context *ctx)
     /* Check all U8 nodes. */
     for(u32 i = 1; i < node_count; i++)
     {
+        U8Node *cur_node = &(nodes[i]);
         u32 node_number = (i + 1);
 
         /* Check node type. */
-        if (nodes[i].properties.type != U8NodeType_File && nodes[i].properties.type != U8NodeType_Directory)
+        if (cur_node->type != U8NodeType_File && cur_node->type != U8NodeType_Directory)
         {
-            ERROR_MSG("Invalid entry type for U8 node #%u! (0x%x).", node_number, nodes[i].properties.type);
+            ERROR_MSG("Invalid entry type for U8 node #%u! (0x%X).", node_number, cur_node->type);
             goto out;
         }
 
         /* Check name offset. */
-        if (nodes[i].properties.name_offset >= str_table_size)
+        if (cur_node->name_offset >= str_table_size)
         {
             ERROR_MSG("Name offset for U8 node #%u exceeds string table size!", node_number);
             goto out;
         }
 
         /* Check name. */
-        if (!*(str_table + nodes[i].properties.name_offset))
+        if (!*(str_table + cur_node->name_offset))
         {
             ERROR_MSG("Empty name for U8 node #%u!", node_number);
             goto out;
         }
 
         /* Check data offset. */
-        /* Files: check if the data offset matches the current value for the calculated file offset. */
+        /* Files: check if the data offset is lower than the data offset from the U8 header, or greater than our buffer size. */
         /* Directories: check if the data offset is equal to or greater than the node count. */
 
-        /* Note: don't check if the node pointed to by the index from the data offset in a directory node actually *is* a directory node. */
+        /* Note: don't check if the node pointed to by the data offset field in directory nodes actually *is* a directory node. */
         /* Some custom tools don't set proper data offset values for directory nodes. */
-        if ((nodes[i].properties.type == U8NodeType_File && nodes[i].data_offset < u8_header.data_offset) || \
-            (nodes[i].properties.type == U8NodeType_Directory && nodes[i].data_offset >= node_count))
+        if ((cur_node->type == U8NodeType_File && (cur_node->data_offset < u8_header.data_offset || cur_node->data_offset >= buf_size)) || \
+            (cur_node->type == U8NodeType_Directory && cur_node->data_offset >= node_count))
         {
-            ERROR_MSG("Invalid data offset for U8 node #%u! (0x%x).", node_number, nodes[i].data_offset);
+            ERROR_MSG("Invalid data offset for U8 node #%u! (0x%X).", node_number, cur_node->data_offset);
             goto out;
         }
 
-        if (nodes[i].properties.type == U8NodeType_Directory)
+        /* Check size. */
+        /* Files: check if the size doesn't exceed our buffer size. */
+        /* Directories: check if size value points to a node number *lower* than this directory's node number, or if it exceeds the total node count. */
+
+        /* Note: we could be dealing with an empty directory, so don't check if the size value is equal to this directory's node number. */
+        if ((cur_node->type == U8NodeType_File && (cur_node->data_offset + cur_node->size) > buf_size) || \
+            (cur_node->type == U8NodeType_Directory && (cur_node->size < node_number || cur_node->size > node_count)))
         {
-            /* Check if the size value points to a node number *lower* than this directory's node number, or if it exceeds the total node count. */
-            /* We could be dealing with an empty directory, so don't check if the size value is equal to this directory's node number. */
-            if (nodes[i].size < node_number || nodes[i].size > node_count)
-            {
-                ERROR_MSG("Invalid end node number value for U8 node #%u! (0x%x).", node_number, nodes[i].size);
-                goto out;
-            }
+            ERROR_MSG("Invalid size for U8 node #%u! (0x%X).", node_number, cur_node->size);
+            goto out;
         }
     }
 
@@ -185,7 +187,7 @@ U8Node *u8GetDirectoryNodeByPath(U8Context *ctx, const char *path, u32 *out_node
     U8Node *dir_node = NULL;
     u32 node_idx = 0;
 
-    if (!ctx || !ctx->str_table || !path || *path != '/' || !(path_len = strlen(path)) || !(dir_node = u8GetNodeByOffset(ctx, 0)))
+    if (!ctx || !ctx->str_table || !path || *path != '/' || !(path_len = strlen(path)) || !(dir_node = u8GetNodeByOffset(ctx, 0)) || !out_node_idx)
     {
         ERROR_MSG("Invalid parameters!");
         return NULL;
@@ -224,7 +226,7 @@ U8Node *u8GetDirectoryNodeByPath(U8Context *ctx, const char *path, u32 *out_node
         pch = strtok(NULL, "/");
     }
 
-    if (out_node_idx) *out_node_idx = node_idx;
+    *out_node_idx = node_idx;
 
 out:
     if (path_dup) free(path_dup);
@@ -239,7 +241,7 @@ U8Node *u8GetFileNodeByPath(U8Context *ctx, const char *path, u32 *out_node_idx)
     U8Node *dir_node = NULL, *file_node = NULL;
     u32 node_idx = 0;
 
-    if (!ctx || !ctx->str_table || !path || *path != '/' || (path_len = strlen(path)) <= 1)
+    if (!ctx || !ctx->str_table || !path || *path != '/' || (path_len = strlen(path)) <= 1 || !out_node_idx)
     {
         ERROR_MSG("Invalid parameters!");
         return NULL;
@@ -284,7 +286,7 @@ U8Node *u8GetFileNodeByPath(U8Context *ctx, const char *path, u32 *out_node_idx)
         goto out;
     }
 
-    if (out_node_idx) *out_node_idx = node_idx;
+    *out_node_idx = node_idx;
 
 out:
     if (path_dup) free(path_dup);
@@ -292,12 +294,19 @@ out:
     return file_node;
 }
 
-u8 *u8LoadFileData(U8Context *ctx, U8Node *file_node, u32 *out_size)
+u8 *u8LoadFileData(U8Context *ctx, u32 file_node_idx, u32 *out_size)
 {
-    if (!ctx || !ctx->u8_buf || !ctx->u8_header.data_offset || !file_node || file_node->properties.type != U8NodeType_File || file_node->data_offset < ctx->u8_header.data_offset || \
-        !file_node->size || !out_size)
+    if (!ctx || !ctx->u8_buf || !ctx->u8_header.data_offset || !ctx->nodes || file_node_idx >= ctx->node_count || !out_size)
     {
         ERROR_MSG("Invalid parameters!");
+        return NULL;
+    }
+
+    /* Get U8 file node. */
+    U8Node *file_node = &(ctx->nodes[file_node_idx]);
+    if (file_node->type != U8NodeType_File || !file_node->size)
+    {
+        ERROR_MSG("Invalid U8 file node!");
         return NULL;
     }
 
@@ -316,40 +325,59 @@ u8 *u8LoadFileData(U8Context *ctx, U8Node *file_node, u32 *out_size)
     return buf;
 }
 
-bool u8SaveFileData(U8Context *ctx, U8Node *file_node, void *buf, u32 size)
+bool u8SaveFileData(U8Context *ctx, u32 file_node_idx, void *buf, u32 size)
 {
     u8 *buf_u8 = NULL;
 
-    if (!ctx || !ctx->u8_buf || !ctx->u8_header.data_offset || !file_node || file_node->properties.type != U8NodeType_File || file_node->data_offset < ctx->u8_header.data_offset || \
-        !file_node->size || !(buf_u8 = (u8*)buf) || !size || size != file_node->size)
+    if (!ctx || !ctx->u8_buf || !ctx->u8_header.data_offset || !ctx->nodes || file_node_idx >= ctx->node_count || \
+        !(buf_u8 = (u8*)buf) || !size)
     {
         ERROR_MSG("Invalid parameters!");
         return false;
     }
 
+    /* Get U8 file node. */
+    U8Node *file_node = &(ctx->nodes[file_node_idx]);
+    if (file_node->type != U8NodeType_File || !file_node->size)
+    {
+        ERROR_MSG("Invalid U8 file node!");
+        return false;
+    }
+
+    /* Validate provided file size. */
+    if (size > file_node->size)
+    {
+        ERROR_MSG("Provided file size exceeds U8 file node data size!");
+        return false;
+    }
+
     /* Save file data. */
-    memcpy(ctx->u8_buf + file_node->data_offset, buf_u8, file_node->size);
+    memcpy(ctx->u8_buf + file_node->data_offset, buf_u8, size);
+
+    /* Update U8 entry file size, if needed. */
+    /* Don't forget to flush the modified U8 node to our parent buffer. */
+    if (size < file_node->size)
+    {
+        memset(ctx->u8_buf + file_node->data_offset + size, 0, file_node->size - size);
+        file_node->size = size;
+        memcpy(ctx->u8_buf + ctx->u8_header.root_node_offset + (sizeof(U8Node) * file_node_idx), file_node, sizeof(U8Node));
+    }
 
     return true;
 }
 
 static U8Node *u8GetChildNodeByName(U8Context *ctx, U8Node *dir_node, u32 *node_idx, const char *name, u8 type)
 {
-    u32 name_len = 0;
-
-    if (!ctx || !ctx->nodes || !ctx->str_table || !dir_node || dir_node->properties.type != U8NodeType_Directory || !node_idx || *node_idx >= ctx->node_count || (*node_idx + 1) >= dir_node->size || \
-        !name || !(name_len = strlen(name)) || (type != U8NodeType_File && type != U8NodeType_Directory)) return NULL;
+    if (!ctx || !ctx->nodes || !ctx->str_table || !dir_node || dir_node->type != U8NodeType_Directory || !node_idx || *node_idx >= ctx->node_count || (*node_idx + 1) >= dir_node->size || \
+        !name || !*name || (type != U8NodeType_File && type != U8NodeType_Directory)) return NULL;
 
     for(u32 i = (*node_idx + 1); i < dir_node->size; i++)
     {
-        char *node_name = (ctx->str_table + ctx->nodes[i].properties.name_offset);
-
-        if (ctx->nodes[i].properties.type != type || strlen(node_name) != name_len) continue;
-
-        if (!strcmp(node_name, name))
+        U8Node *cur_node = &(ctx->nodes[i]);
+        if (cur_node->type == type && !strcmp(ctx->str_table + cur_node->name_offset, name))
         {
             *node_idx = i;
-            return &(ctx->nodes[i]);
+            return cur_node;
         }
     }
 

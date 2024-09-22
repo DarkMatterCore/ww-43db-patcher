@@ -1,7 +1,7 @@
 /*
  * main.c
  *
- * Copyright (c) 2020-2023, DarkMatterCore <pabloacurielz@gmail.com>.
+ * Copyright (c) 2020-2024, DarkMatterCore <pabloacurielz@gmail.com>.
  *
  * This file is part of ww-43db-patcher (https://github.com/DarkMatterCore/ww-43db-patcher).
  *
@@ -22,6 +22,13 @@
 #include "ardb.h"
 
 #include <runtimeiospatch.h>
+
+static const u32 g_ardbWc24Entries[] = {
+    ARDB_WC24_EVC_ENTRY,
+    ARDB_WC24_CMOC_ENTRY
+};
+
+static const u32 g_ardbWc24EntriesCount = MAX_ELEMENTS(g_ardbWc24Entries);
 
 extern void __exception_setreload(int t);
 
@@ -104,10 +111,11 @@ int main(int argc, char **argv)
     }
 
     printf("OK!\n\n");
+#else
+    printf("\n");
 #endif  /* BACKUP_U8_ARCHIVE */
 
-    printf("Press 1/X  to patch the whole WiiWare 4:3 aspect ratio database.\n");
-    printf("Press 2/Y  to only patch WC24 channel entries within the WW 43DB.\n\n");
+    printf("Press 1/X  to patch WC24 channel entries within the WW 43DB.\n\n");
 #ifdef BACKUP_U8_ARCHIVE
     printf("Press  -   to restore a backup of the System Menu U8 archive.\n\n");
 #endif  /* BACKUP_U8_ARCHIVE */
@@ -118,15 +126,14 @@ int main(int argc, char **argv)
     while(true)
     {
         u32 pressed = utilsGetInput(UtilsInputType_Down);
-        bool wc24_only = (pressed == WPAD_BUTTON_2);
 
-        if (pressed == WPAD_BUTTON_1 || wc24_only)
+        if (pressed == WPAD_BUTTON_1)
         {
             /* Patch WiiWare aspect ratio database. */
             utilsPrintHeadline();
-            printf("Patching WW 43DB (%s entries)...\n\n", wc24_only ? "WC24" : "all");
+            printf("Patching WC24 entries within WW 43DB...\n\n");
 
-            if (!ardbPatchDatabaseFromSystemMenuArchive(wc24_only ? AspectRatioDatabaseType_WiiWareWC24Only : AspectRatioDatabaseType_WiiWare))
+            if (!ardbPatchDatabaseFromSystemMenuArchive(AspectRatioDatabaseType_WiiWare, g_ardbWc24Entries, g_ardbWc24EntriesCount))
             {
                 ret = -6;
                 goto out;
