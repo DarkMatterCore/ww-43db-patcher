@@ -18,7 +18,7 @@ Acknowledgments
 --------------
 
 * [InvoxiPlayGames](https://github.com/InvoxiPlayGames) for both testing and providing the icon.
-* Adinaton, for helping with some extra tests.
+* [Ingunar](https://github.com/Ingunar), for helping with some extra tests.
 
 Changelog
 --------------
