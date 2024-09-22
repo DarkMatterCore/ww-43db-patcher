@@ -25,7 +25,7 @@ GIT_REV			:=	$(GIT_REV)-dirty
 endif
 
 VERSION_MAJOR	:=	0
-VERSION_MINOR	:=	3
+VERSION_MINOR	:=	4
 
 APP_TITLE		:=	ww-43db-patcher
 APP_AUTHOR		:=	DarkMatterCore
